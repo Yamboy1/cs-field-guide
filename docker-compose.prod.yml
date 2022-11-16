@@ -13,22 +13,22 @@ x-default-opts:
 
 x-django-config:
     &django-config
-    image: ghcr.io/uccser/cs-field-guide:${CS_FIELD_GUIDE_IMAGE_TAG}
+    image: ghcr.io/Yamboy1/cs-field-guide:${CS_FIELD_GUIDE_IMAGE_TAG}
     environment:
         POSTGRES_HOST: postgres
         POSTGRES_PORT: "5432"
-        DEPLOYMENT_ENVIRONMENT_FILE: /cs-field-guide_deployment_environment
-        DJANGO_SECRET_KEY_FILE: /run/secrets/cs-field-guide_django_secret_key
-        POSTGRES_DB_FILE: /run/secrets/cs-field-guide_postgres_db
-        POSTGRES_USER_FILE: /run/secrets/cs-field-guide_postgres_user
-        POSTGRES_PASSWORD_FILE: /run/secrets/cs-field-guide_postgres_password
+        DEPLOYMENT_ENVIRONMENT_FILE: /cs-field-guide-dev_deployment_environment
+        DJANGO_SECRET_KEY_FILE: /run/secrets/cs-field-guide-dev_django_secret_key
+        POSTGRES_DB_FILE: /run/secrets/cs-field-guide-dev_postgres_db
+        POSTGRES_USER_FILE: /run/secrets/cs-field-guide-dev_postgres_user
+        POSTGRES_PASSWORD_FILE: /run/secrets/cs-field-guide-dev_postgres_password
     configs:
-        - cs-field-guide_deployment_environment
+        - cs-field-guide-dev_deployment_environment
     secrets:
-        - cs-field-guide_django_secret_key
-        - cs-field-guide_postgres_db
-        - cs-field-guide_postgres_user
-        - cs-field-guide_postgres_password
+        - cs-field-guide-dev_django_secret_key
+        - cs-field-guide-dev_postgres_db
+        - cs-field-guide-dev_postgres_user
+        - cs-field-guide-dev_postgres_password
 
 # -----------------------------------------------------------------------------
 
@@ -47,10 +47,10 @@ services:
             labels:
                 - "traefik.enable=true"
                 - "traefik.docker.network=uccser-public"
-                - "traefik.http.services.cs-field-guide-django.loadbalancer.server.port=8000"
-                - "traefik.http.routers.cs-field-guide-django.service=cs-field-guide-django"
-                - "traefik.http.routers.cs-field-guide-django.rule=${CS_FIELD_GUIDE_ROUTER_RULE}"
-                - "traefik.http.routers.cs-field-guide-django.entryPoints=web"
+                - "traefik.http.services.cs-field-guide-dev-django.loadbalancer.server.port=8000"
+                - "traefik.http.routers.cs-field-guide-dev-django.service=cs-field-guide-django"
+                - "traefik.http.routers.cs-field-guide-dev-django.ruleHost=Host(`cs-field-guide-dev.csse.canterbury.ac.nz`)"
+                - "traefik.http.routers.cs-field-guide-dev-django.entryPoints=web"
                 # Redirect non-www to www, only triggers in production swarm.
                 - "traefik.http.middlewares.cs-field-guide-redirect-non-www.redirectregex.regex=^https://csfieldguide\\.org(.*)"
                 - "traefik.http.middlewares.cs-field-guide-redirect-non-www.redirectregex.replacement=https://www.csfieldguide.org$${1}"
@@ -96,13 +96,13 @@ services:
             restart_policy:
                 condition: on-failure
         environment:
-            POSTGRES_DB_FILE: /run/secrets/cs-field-guide_postgres_db
-            POSTGRES_USER_FILE: /run/secrets/cs-field-guide_postgres_user
-            POSTGRES_PASSWORD_FILE: /run/secrets/cs-field-guide_postgres_password
+            POSTGRES_DB_FILE: /run/secrets/cs-field-guide-dev_postgres_db
+            POSTGRES_USER_FILE: /run/secrets/cs-field-guide-dev_postgres_user
+            POSTGRES_PASSWORD_FILE: /run/secrets/cs-field-guide-dev_postgres_password
         secrets:
-            - cs-field-guide_postgres_db
-            - cs-field-guide_postgres_user
-            - cs-field-guide_postgres_password
+            - cs-field-guide_postgres-dev_db
+            - cs-field-guide_postgres-dev_user
+            - cs-field-guide_postgres-dev_password
         networks:
             - backend
         volumes:
@@ -110,17 +110,17 @@ services:
             - postgres-data-backups:/backups:z
 
 configs:
-    cs-field-guide_deployment_environment:
+    cs-field-guide-dev_deployment_environment:
         external: true
 
 secrets:
-    cs-field-guide_django_secret_key:
+    cs-field-guide-dev_django_secret_key:
         external: true
-    cs-field-guide_postgres_db:
+    cs-field-guide-dev_postgres_db:
         external: true
-    cs-field-guide_postgres_user:
+    cs-field-guide-dev_postgres_user:
         external: true
-    cs-field-guide_postgres_password:
+    cs-field-guide-dev_postgres_password:
         external: true
 
 networks:
