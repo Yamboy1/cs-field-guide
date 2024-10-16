@@ -3,6 +3,6 @@
     "version": "1.0.0",
     "private": true,
     "dependencies": {
-        "chart.js": "4.4.4"
+        "chart.js": "4.4.5"
     }
 }
