@@ -33,10 +33,10 @@ class ChapterSectionsLoader(TranslatableModelLoader):
                 field.
         """
         chapter_sections_structure = self.load_yaml_file(self.structure_file_path)
-        section_numbers = []
+        next_section_number = 1
+        used_slugs = set()
 
         for (section_slug, section_structure) in chapter_sections_structure.items():
-
             if section_structure is None:
                 raise MissingRequiredFieldError(
                     self.structure_file_path,
@@ -57,8 +57,15 @@ class ChapterSectionsLoader(TranslatableModelLoader):
                     "section-number - value '{}' is invalid".format(section_number),
                     "section-number must be an integer value."
                 )
+            if section_number != next_section_number:
+                raise InvalidYAMLValueError(
+                    self.structure_file_path,
+                    "section-number - value '{}' is invalid".format(section_number),
+                    "section-numbers must be in sequential order. The next expected number was '{}'."
+                        .format(next_section_number)
+                )
 
-            section_numbers.append(section_number)
+            next_section_number += 1
 
             chapter_section_translations = self.get_blank_translation_dictionary()
 
@@ -68,10 +75,28 @@ class ChapterSectionsLoader(TranslatableModelLoader):
                 chapter_section_translations[language]["content"] = content.html_string
                 chapter_section_translations[language]["name"] = content.title
 
+            # Override slug. Useful when macrons or other special chars wanted in slug.
+            new_slug = section_structure.get("slug", None)
+            if new_slug:
+                if new_slug == section_slug:
+                    raise InvalidYAMLValueError(
+                        self.structure_file_path,
+                        f"slug - value {new_slug} is invalid.",
+                        f"Must be different from default slug {section_slug}."
+                    )
+                if new_slug in used_slugs:
+                    raise InvalidYAMLValueError(
+                        self.structure_file_path,
+                        f"slug - value {new_slug} is invalid.",
+                        f"Must be unique, {new_slug} has already been used."
+                    )
+                section_slug = new_slug
+                used_slugs.add(section_slug)
+
             chapter_section, created = self.chapter.chapter_sections.update_or_create(
-                slug=section_slug,
+                number=section_number,
                 defaults={
-                    'number': section_number,
+                    'slug': section_slug,
                     'languages': list(content_translations.keys()),
                 }
             )
@@ -101,11 +126,4 @@ class ChapterSectionsLoader(TranslatableModelLoader):
                 structure_filename=self.structure_file_path,
             ).load()
 
-        # assumes first section number is always 1
-        for counter, section_number in enumerate(section_numbers, 1):
-            if section_number != counter:
-                raise InvalidYAMLValueError(
-                    self.structure_file_path,
-                    "section-number - value '{}' is invalid".format(section_number),
-                    "section-numbers must be in sequential order. The next expected number was '{}'.".format(counter)
-                )
+        self.chapter.chapter_sections.filter(number__gte=next_section_number).delete()

@@ -16,9 +16,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Create Docker network
         run: docker network create uccser-development-stack
+        # Required for the node service
+      - name: Set DOCKER_UID variable
+        run: echo "DOCKER_UID=$(echo $UID)" >> $GITHUB_ENV
       - name: Start systems
         run: docker compose -f docker-compose.local.yml up -d
       - name: Run Django system check
@@ -29,9 +32,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Create Docker network
         run: docker network create uccser-development-stack
+        # Required for the node service
+      - name: Set DOCKER_UID variable
+        run: echo "DOCKER_UID=$(echo $UID)" >> $GITHUB_ENV
       - name: Start systems
         run: docker compose -f docker-compose.local.yml up -d
       - name: Create static files
@@ -52,39 +58,43 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run general tests
         run: ./dev ci test_general
       - name: Create coverage file
         run: docker compose -f docker-compose.local.yml run --rm --user="root" django coverage xml -i
       - name: Upload coverage file
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./csfieldguide/coverage.xml
           verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   test-management:
     name: Tests - Management
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run management tests
         run: ./dev ci test_management
       - name: Create coverage file
         run: docker compose -f docker-compose.local.yml run --rm --user="root" django coverage xml -i
       - name: Upload coverage file
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./csfieldguide/coverage.xml
           verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   test-style:
     name: Tests - Style
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run style tests
         run: ./dev ci style
 
@@ -93,9 +103,9 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
       - name: Install dependencies
@@ -121,10 +131,13 @@ jobs:
     ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Docker network
         run: docker network create uccser-development-stack
+        # Required for the node service
+      - name: Set DOCKER_UID variable
+        run: echo "DOCKER_UID=$(echo $UID)" >> $GITHUB_ENV
 
       - name: Start system
         run: docker compose -f docker-compose.local.yml up -d
@@ -139,7 +152,7 @@ jobs:
         run: tar czf static-files.tar.gz --directory csfieldguide/staticfiles/ .
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: static-files
           path: static-files.tar.gz
@@ -169,10 +182,14 @@ jobs:
     ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create Docker network
         run: docker network create uccser-development-stack
+
+        # Required for the node service
+      - name: Set DOCKER_UID variable
+        run: echo "DOCKER_UID=$(echo $UID)" >> $GITHUB_ENV
 
       - name: Start system
         run: docker compose -f docker-compose.local.yml up -d
@@ -196,7 +213,7 @@ jobs:
         run: tar czf interactive-thumbnails.tar.gz --directory csfieldguide/build/img/interactives/thumbnails/ .
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: interactive-thumbnails-${{ matrix.language }}
           path: interactive-thumbnails.tar.gz
@@ -215,10 +232,10 @@ jobs:
     ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts/
 
@@ -233,7 +250,7 @@ jobs:
           ls artifacts/interactive-thumbnails-*/interactive-thumbnails.tar.gz | xargs -n1 tar -xz --directory csfieldguide/staticfiles/img/interactives/thumbnails --file
 
       - name: Log in to ${{ env.REGISTRY }}
-        uses: docker/login-action@v2.1.0
+        uses: docker/login-action@v3.3.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -241,7 +258,7 @@ jobs:
 
       - name: Setup Docker metadata
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -249,7 +266,7 @@ jobs:
             type=ref,event=branch,priority=2
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v3.2.0
+        uses: docker/build-push-action@v5.4.0
         with:
           file: ./infrastructure/production/django/Dockerfile
           context: .

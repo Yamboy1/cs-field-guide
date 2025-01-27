@@ -1,4 +1,7 @@
-FROM node:14.20.0-buster
+FROM node:20-bookworm
+
+ARG DOCKER_UID=1000
+RUN usermod -u $DOCKER_UID node
 
 # Install required system dependencies
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -11,7 +14,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     libgif-dev \
     librsvg2-dev \
     make \
-    python \
     # Cleaning up unused files
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && rm -rf /var/lib/apt/lists/*
