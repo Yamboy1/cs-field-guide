@@ -103,6 +103,7 @@ A complete chapter application structure file with multiple chapters may look li
         chapter-number: 2
     glossary-folder: glossary
 
+.. _chapter-configuration-file:
 
 Chapter Configuration File
 ------------------------------------------------------------------------------
@@ -133,6 +134,8 @@ A complete chapter structure file may look like the following:
     icon: svg/introduction-icon.svg
     sections: sections/sections.yaml
 
+.. _chapter-sections-configuration-file:
+
 Chapter Sections Configuration File
 ------------------------------------------------------------------------------
 
@@ -146,11 +149,15 @@ Chapter Sections Configuration File
 
 - **Required Fields:**
 
-  - ``<section-slug>:`` Key for the section.
+  - ``<section-slug>:`` Key for the section. Cannot contain macrons.
 
     - **Required Fields:**
 
       - ``section-number:`` Number order for the section in the chapter.
+    
+    - **Optional fields:**
+
+    - ``slug:`` Override the chapter section's slug. Use this to include macrons in URL. (See mātāpono-māori chapter section for example use case.)
 
 A complete chapter application structure file with multiple chapters may look like the following:
 
